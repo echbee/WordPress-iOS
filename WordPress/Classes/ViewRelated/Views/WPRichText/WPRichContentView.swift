@@ -258,6 +258,9 @@ extension WPRichContentView: WPTextAttachmentManagerDelegate {
             return WPRichTextImage(frame: CGRect.zero)
         }
 
+        let index = mediaArray.count
+        let indexPath = IndexPath(row: index, section: 1)
+
         // Until we have a loaded image use a 1/1 height.  We want a nonzero value
         // to avoid an edge case issue where 0 frames are not correctly updated
         // during rotation.
@@ -268,13 +271,28 @@ extension WPRichContentView: WPTextAttachmentManagerDelegate {
         img.contentURL = url
         img.linkURL = linkURLForImageAttachment(attachment)
 
-        if let cachedImage = imageSource.image(for: url, with: maxDisplaySize) {
-            img.imageView.image = cachedImage
-            attachment.maxSize = cachedImage.size
+        if url.isGif {
+            let postInfo = ReaderContentPostInfo()
+            postInfo.isPrivateOnWPCom = isPrivate
+            img.imageLoader.loadImage(with: url, from: postInfo, preferedSize: maxDisplaySize, placeholder: nil, success: { [weak self] in
+                guard let strongSelf = self else {
+                    return
+                }
+                DispatchQueue.main.async() {
+                    let richMedia = strongSelf.mediaArray[indexPath.row]
+                    richMedia.attachment.maxSize = richMedia.image.imageView.intrinsicContentSize
+                    strongSelf.layoutAttachmentViews()
+                }
+            }) { error in
+                DDLogError("Error downloading animated gif in reader detail: \(String(describing: error)) at url: \(url)")
+            }
         } else {
-            let index = mediaArray.count
-            let indexPath = IndexPath(row: index, section: 1)
-            imageSource.fetchImage(for: url, with: maxDisplaySize, indexPath: indexPath, isPrivate: isPrivate)
+            if let cachedImage = imageSource.image(for: url, with: maxDisplaySize) {
+                img.imageView.image = cachedImage
+                attachment.maxSize = cachedImage.size
+            } else {
+                imageSource.fetchImage(for: url, with: maxDisplaySize, indexPath: indexPath, isPrivate: isPrivate)
+            }
         }
 
         let media = RichMedia(image: img, attachment: attachment)
@@ -391,4 +409,11 @@ extension WPRichContentView: WPTableImageSourceDelegate {
 struct RichMedia {
     let image: WPRichTextImage
     let attachment: WPTextAttachment
+}
+
+class ReaderContentPostInfo: PostInformation {
+    var isPrivateOnWPCom: Bool = false
+    var isBlogSelfHostedWithCredentials: Bool {
+        return false
+    }
 }

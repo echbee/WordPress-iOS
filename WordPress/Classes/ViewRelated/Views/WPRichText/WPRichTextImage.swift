@@ -18,6 +18,10 @@ open class WPRichTextImage: UIControl, WPRichTextMediaAttachment {
         }
     }
 
+    lazy var imageLoader: ImageLoader = {
+        return ImageLoader(imageView: imageView, gifStrategy: .mediumGIFs)
+    }()
+
 
     // MARK: Lifecycle
 
