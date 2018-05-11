@@ -6,7 +6,7 @@ open class WPRichTextImage: UIControl, WPRichTextMediaAttachment {
 
     var contentURL: URL?
     var linkURL: URL?
-    @objc fileprivate(set) var imageView: UIImageView
+    @objc fileprivate(set) var imageView: CachedAnimatedImageView
 
     override open var frame: CGRect {
         didSet {
@@ -22,7 +22,7 @@ open class WPRichTextImage: UIControl, WPRichTextMediaAttachment {
     // MARK: Lifecycle
 
     override init(frame: CGRect) {
-        imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
+        imageView = CachedAnimatedImageView(frame: CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
         imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         imageView.contentMode = .scaleAspectFit
 
@@ -32,7 +32,7 @@ open class WPRichTextImage: UIControl, WPRichTextMediaAttachment {
     }
 
     required public init?(coder aDecoder: NSCoder) {
-        imageView = aDecoder.decodeObject(forKey: UIImage.classNameWithoutNamespaces()) as! UIImageView
+        imageView = aDecoder.decodeObject(forKey: UIImage.classNameWithoutNamespaces()) as! CachedAnimatedImageView
         contentURL = aDecoder.decodeObject(forKey: "contentURL") as! URL?
         linkURL = aDecoder.decodeObject(forKey: "linkURL") as! URL?
 
